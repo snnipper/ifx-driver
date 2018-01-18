@@ -17,9 +17,7 @@ return [
         'server'  => env('DB_SERVER', ''),
         'db_locale'   => 'en_US.819',
         'client_locale' => 'en_US.819',
-        'db_encoding'   => 'GBK',
         'initSqls' => false,
-        'client_encoding' => 'UTF-8',
         'prefix'    => ''
     ],
 ];
