@@ -1,0 +1,37 @@
+{
+    "name": "karddell/ifx-driver",
+    "description": "Informix driver DB for laravel 5.5.*",
+    "require": {
+        "php": "^7.1",
+        "illuminate/support": "^5.5",
+        "illuminate/database": "^5.5",
+        "illuminate/pagination": "^5.5"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "^1.7",
+        "mockery/mockery": "^1.0",
+        "phpunit/phpunit": "^6.5",
+        "phpspec/phpspec": "^4.3"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "snnipper",
+            "email": "snnipper@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+          "Karddell\\": "src/Karddell"
+        }
+    },
+    "extra": {
+        "component": "package",
+        "laravel": {
+            "providers": [
+                "Karddell\\Informix\\InformixDBServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}
