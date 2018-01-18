@@ -40,41 +40,25 @@ class IfxConnection extends Connection
 
     public function prepareBindings(array $bindings){
         $grammar = $this->getQueryGrammar();
-        if($this->isTransEncoding()){
-            $db_encoding = $this->getConfig('db_encoding');
-            $client_encoding = $this->getConfig('client_encoding');
-            foreach ($bindings as $key => &$value) {
-                // We need to transform all instances of DateTimeInterface into the actual
-                // date string. Each query grammar maintains its own date string format
-                // so we'll just ask the grammar for the format to get from the date.
-                if ($value instanceof DateTimeInterface) {
-                    $value = $value->format($grammar->getDateFormat());
-                } elseif ($value === false) {
-                    $value = 0;
-                }
-                if(is_string($value)) {
-                    $value = $this->convertCharset($client_encoding, $db_encoding, $value);
-                }
+
+        foreach ($bindings as $key => &$value) {
+            // We need to transform all instances of DateTimeInterface into the actual
+            // date string. Each query grammar maintains its own date string format
+            // so we'll just ask the grammar for the format to get from the date.
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format($grammar->getDateFormat());
+            } elseif ($value === false) {
+                $value = 0;
             }
-        } else {
-            foreach ($bindings as $key => &$value) {
-                if ($value instanceof DateTimeInterface) {
-                    $value = $value->format($grammar->getDateFormat());
-                } elseif ($value === false) {
-                    $value = 0;
-                }
+            if(is_string($value)) {
+                $value = $this->convertCharset($value);
             }
         }
+        
         return $bindings;
     }
 
-    protected function isTransEncoding(){
-        $db_encoding = $this->getConfig('db_encoding');
-        $client_encoding = $this->getConfig('client_encoding');
-        return ($db_encoding && $client_encoding && ($db_encoding != $client_encoding));
-    }
-
-    protected function convertCharset($in_encoding, $out_encoding, $value){
+    protected function convertCharset($value){
 
         //IGNORE
         //return iconv($in_encoding, "{$out_encoding}//IGNORE", trim($value));
@@ -86,27 +70,25 @@ class IfxConnection extends Connection
         if(config("app.debug"))
             Log::debug("query: ".$query." with ".implode(', ', $bindings));
         $results = parent::select($query, $bindings, $useReadPdo);
-        if($this->isTransEncoding()){
-            if($results){
-                $db_encoding = $this->getConfig('db_encoding');
-                $client_encoding = $this->getConfig('client_encoding');
-                if(is_array($results) || is_object($results)){
-                    foreach($results as &$result){
-                        if(is_array($result) || is_object($result)){
-                            foreach($result as $key=>&$value){
-                                if(is_string($value)){
-                                    $value = $this->convertCharset($db_encoding, $client_encoding, $value);
-                                }
+
+        if($results){
+            if(is_array($results) || is_object($results)){
+                foreach($results as &$result){
+                    if(is_array($result) || is_object($result)){
+                        foreach($result as $key=>&$value){
+                            if(is_string($value)){
+                                $value = $this->convertCharset($value);
                             }
-                        } else if(is_string($result)) {
-                            $result = $this->convertCharset($db_encoding, $client_encoding, $result);
                         }
+                    } else if(is_string($result)) {
+                        $result = $this->convertCharset($result);
                     }
-                } else if(is_string($results)) {
-                    $results = $this->convertCharset($db_encoding, $client_encoding, $results);
                 }
+            } else if(is_string($results)) {
+                $results = $this->convertCharset($results);
             }
         }
+        
         return $results;
     }
 
@@ -136,37 +118,37 @@ class IfxConnection extends Connection
 
         if(config("app.debug"))
             Log::debug("statement: ".$query." with ".implode(', ', $bindings));
-        return $this->run($query, $bindings, function ($me, $query, $bindings) {
-            if ($me->pretending()) {
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            if ($this->pretending()) {
                 return true;
             }
             $count = substr_count($query, '?');
             if($count == count($bindings)){
-                $bindings = $me->prepareBindings($bindings);
-                return $me->getPdo()->prepare($query)->execute($bindings);
+                $bindings = $this->prepareBindings($bindings);
+                return $this->getPdo()->prepare($query)->execute($bindings);
             }
 
             if(count($bindings) % $count > 0)
                 throw new \InvalidArgumentException('the driver can not support multi-insert.');
 
             $mutiBindings = array_chunk($bindings, $count);
-            $me->beginTransaction();
+            $this->beginTransaction();
             try{
-                $pdo = $me->getPdo();
+                $pdo = $this->getPdo();
                 $stmt = $pdo->prepare($query);
 
                 foreach($mutiBindings as $mutiBinding){
-                    $mutiBinding = $me->prepareBindings($mutiBinding);
+                    $mutiBinding = $this->prepareBindings($mutiBinding);
                     $stmt->execute($mutiBinding);
                 }
             }catch(\Exception $e){
-                $me->rollBack();
+                $this->rollBack();
                 return false;
             }catch(\Throwable $e){
-                $me->rollBack();
+                $this->rollBack();
                 return false;
             }
-            $me->commit();
+            $this->commit();
 
             return true;
 
