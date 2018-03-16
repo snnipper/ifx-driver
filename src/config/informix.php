@@ -9,15 +9,15 @@
 return [
     'informix' => [
         'driver'    => 'informix',
-        'host'      => env('DB_HOST', 'localhost'),
-        'database'  => env('DB_DATABASE', 'forge'),
-        'username'  => env('DB_USERNAME', 'forge'),
-        'password'  => env('DB_PASSWORD', ''),
-        'service'  => env('DB_SERVICE', '11143'),
-        'server'  => env('DB_SERVER', ''),
+        'host'      => env('IFX_HOST', 'localhost'),
+        'database'  => env('IFX_DATABASE', 'forge'),
+        'username'  => env('IFX_USERNAME', 'forge'),
+        'password'  => env('IFX_PASSWORD', ''),
+        'service'  => env('IFX_SERVICE', '11143'),
+        'server'  => env('IFX_SERVER', ''),
         'db_locale'   => 'en_US.819',
         'client_locale' => 'en_US.819',
-        'initSqls' => false,
+        'initSqls' => false, 
         'prefix'    => ''
     ],
 ];
