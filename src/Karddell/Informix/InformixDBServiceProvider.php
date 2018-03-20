@@ -2,7 +2,9 @@
 
 namespace Karddell\Informix;
 
+use Illuminate\Database\Connection;
 use Illuminate\Support\ServiceProvider;
+use Karddell\Informix\Connectors\IfxConnector as Connector;
 /**
  * Class InformixDBServiceProvider.
  */
@@ -31,18 +33,18 @@ class InformixDBServiceProvider extends ServiceProvider
         if (file_exists(config_path('informix.php'))) {
 
             $this->mergeConfigFrom(config_path('informix.php'), 'database.connections');
-
             $config = $this->app['config']->get('informix', []);
-
             $connection_keys = array_keys($config);
 
             foreach ($connection_keys as $key) {
-                $this->app['db']->extend($key, function ($config) {
-                    $oConnector = new Connectors\IfxConnector();
-                    $connection = $oConnector->connect($config);
-                    return new IfxConnection($connection, $config['database'], $config['prefix'], $config);
+                Connection::resolverFor($key, function ($connection, $database, $prefix, $config){
+                    $connector = new Connector();
+                    $connection = $connector->connect($config);
+                    $db = new IfxConnection($connection, $database, $prefix, $config);
+                    return $db; 
                 });
             }
+
         }
     }
 }
